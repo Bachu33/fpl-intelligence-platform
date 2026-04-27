@@ -56,6 +56,7 @@ def process_players(elements, teams, current_gw):
             "saves": player["saves"],
             "bonus": player["bonus"],
             "bps": player["bps"],
+            "points_per_game": float(player["points_per_game"]),
             "gameweek": current_gw,
             "season": "2024-25"
         }
