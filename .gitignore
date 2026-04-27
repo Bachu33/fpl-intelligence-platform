@@ -1,0 +1,17 @@
+# Virtual environment
+venv/
+
+# Data files (too large for GitHub)
+data/raw/
+data/processed/
+
+# Environment variables
+.env
+
+# Model files (will be regenerated)
+model/*.pkl
+model/*.joblib
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
