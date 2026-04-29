@@ -3,7 +3,7 @@
 A live Fantasy Premier League prediction and analytics platform.
 
 ## Live Demo
-[https://bachu33-fpl-intelligence-platform.streamlit.app](https://bachu33-fpl-intelligence-platform.streamlit.app)
+[https://fpl-intelligence-platform.streamlit.app/]
 
 ## What It Does
 - Predicts expected points for all FPL players each gameweek using XGBoost
