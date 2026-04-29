@@ -4,7 +4,7 @@ from pulp import LpMaximize, LpProblem, LpVariable, lpSum, LpBinary, value, PULP
 import sys
 import os
 
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils import load_predictions, POSITION_COLORS
 
 st.set_page_config(page_title="Squad Optimizer", page_icon="🧠", layout="wide")

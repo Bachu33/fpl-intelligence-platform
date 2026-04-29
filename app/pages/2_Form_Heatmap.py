@@ -4,7 +4,7 @@ import plotly.express as px
 import sys
 import os
 
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils import load_player_stats, POSITION_ORDER
 
 st.set_page_config(page_title="Form Heatmap", page_icon="🔥", layout="wide")
