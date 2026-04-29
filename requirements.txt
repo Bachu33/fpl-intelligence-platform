@@ -5,3 +5,5 @@ plotly
 xgboost
 scikit-learn
 python-dotenv
+PuLP
+requests
