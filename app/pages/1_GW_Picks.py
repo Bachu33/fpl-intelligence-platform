@@ -9,6 +9,9 @@ from utils import load_predictions, POSITION_COLORS, POSITION_ORDER
 
 st.set_page_config(page_title="GW Picks", page_icon="🎯", layout="wide")
 
+from utils import apply_custom_css
+apply_custom_css()
+
 st.title("🎯 GW Picks")
 st.markdown("Top predicted players for this gameweek. Filter by position and budget to find the best options.")
 st.markdown("---")
@@ -50,26 +53,24 @@ filtered = df[
 
 st.subheader(f"Top {top_n} Players — GW{df['gameweek'].max()}")
 
-for pos in POSITION_ORDER:
+col1, col2 = st.columns(2)
+
+for idx, pos in enumerate(POSITION_ORDER):
     pos_df = filtered[filtered["position"] == pos]
     if pos_df.empty:
         continue
     
-    st.markdown(f"#### {pos}")
-    
     display_cols = ["player_name", "team", "price", "predicted_points"]
     pos_display = pos_df[display_cols].copy()
-    pos_display.columns = ["Player", "Team", "Price (£m)", "Predicted Points"]
+    pos_display.columns = ["Player", "Team", "Price (£m)", "Predicted Pts"]
     pos_display["Price (£m)"] = pos_display["Price (£m)"].map("{:.1f}".format)
-    pos_display["Predicted Points"] = pos_display["Predicted Points"].map("{:.2f}".format)
+    pos_display["Predicted Pts"] = pos_display["Predicted Pts"].map("{:.2f}".format)
     pos_display = pos_display.reset_index(drop=True)
     pos_display.index += 1
     
-    st.dataframe(
-        pos_display,
-        use_container_width=True,
-        hide_index=False
-    )
+    with (col1 if idx % 2 == 0 else col2):
+        st.markdown(f"#### {pos}")
+        st.dataframe(pos_display, use_container_width=True, hide_index=False)
 
 st.markdown("---")
 
@@ -86,5 +87,12 @@ fig = px.bar(
     title=f"Top {top_n} Players by Predicted Points"
 )
 
-fig.update_layout(height=max(400, top_n * 25))
+fig.update_layout(
+    height=max(400, top_n * 25),
+    paper_bgcolor="#0d1117",
+    plot_bgcolor="#161b22",
+    font=dict(color="#e6edf3")
+)
+
+
 st.plotly_chart(fig, use_container_width=True)

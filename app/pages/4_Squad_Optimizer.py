@@ -9,6 +9,9 @@ from utils import load_predictions, POSITION_COLORS
 
 st.set_page_config(page_title="Squad Optimizer", page_icon="🧠", layout="wide")
 
+from utils import apply_custom_css
+apply_custom_css()
+
 st.title("🧠 Squad Optimizer")
 st.markdown("Builds the highest predicted-points starting XI within your budget using linear programming.")
 st.markdown("---")

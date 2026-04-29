@@ -9,6 +9,9 @@ from utils import load_player_stats, POSITION_ORDER
 
 st.set_page_config(page_title="Form Heatmap", page_icon="🔥", layout="wide")
 
+from utils import apply_custom_css
+apply_custom_css()
+
 st.title("🔥 Form Heatmap")
 st.markdown("Players ranked by current form score (rolling average of recent gameweek points).")
 st.markdown("---")
@@ -47,7 +50,14 @@ fig = px.bar(
     hover_data=["team", "position", "points_per_game", "price"]
 )
 
-fig.update_layout(height=max(400, top_n * 25), coloraxis_showscale=False)
+fig.update_layout(
+    height=max(400, top_n * 25),
+    coloraxis_showscale=False,
+    paper_bgcolor="#0d1117",
+    plot_bgcolor="#161b22",
+    font=dict(color="#e6edf3")
+)
+
 st.plotly_chart(fig, use_container_width=True)
 
 st.markdown("---")
@@ -63,6 +73,11 @@ fig2 = px.scatter(
     hover_data=["team", "points_per_game"],
     labels={"ict_index": "ICT Index", "form": "Form Score"},
     title="Form vs ICT Index (bubble size = price)"
+)
+fig2.update_layout(
+    paper_bgcolor="#0d1117",
+    plot_bgcolor="#161b22",
+    font=dict(color="#e6edf3")
 )
 
 st.plotly_chart(fig2, use_container_width=True)

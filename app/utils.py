@@ -53,3 +53,61 @@ POSITION_COLORS = {
 }
 
 POSITION_ORDER = ["GKP", "DEF", "MID", "FWD"]
+
+def apply_custom_css():
+    st.markdown("""
+        <style>
+        /* Metric boxes */
+        [data-testid="stMetric"] {
+            background-color: var(--secondary-background-color);
+            border: 1px solid rgba(128,128,128,0.2);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        [data-testid="stMetricValue"] {
+            color: #00cc6a;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        /* Dataframe */
+        [data-testid="stDataFrame"] {
+            border: 1px solid rgba(128,128,128,0.2);
+            border-radius: 8px;
+        }
+
+        /* Titles */
+        h1 {
+            color: #00cc6a;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        h2, h3 {
+            font-weight: 600;
+        }
+
+        /* Buttons */
+        .stButton > button {
+            background-color: #00cc6a;
+            color: #ffffff;
+            font-weight: 700;
+            border: none;
+            border-radius: 6px;
+            padding: 0.5rem 1.5rem;
+        }
+
+        .stButton > button:hover {
+            background-color: #00aa55;
+            color: #ffffff;
+        }
+
+        /* Layout */
+        .block-container {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+            max-width: 1200px;
+        }
+        </style>
+    """, unsafe_allow_html=True)

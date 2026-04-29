@@ -10,6 +10,9 @@ from utils import get_supabase_client
 
 st.set_page_config(page_title="Fixture Difficulty", page_icon="📅", layout="wide")
 
+from utils import apply_custom_css
+apply_custom_css()
+
 st.title("📅 Fixture Difficulty Rating")
 st.markdown("FDR heatmap showing how hard each team's upcoming fixtures are. Green = easy, Red = hard.")
 st.markdown("---")
@@ -84,7 +87,13 @@ fig = px.imshow(
     aspect="auto"
 )
 
-fig.update_layout(height=700)
+fig.update_layout(
+    height=700,
+    paper_bgcolor="#0d1117",
+    plot_bgcolor="#161b22",
+    font=dict(color="#e6edf3")
+)
+
 st.plotly_chart(fig, use_container_width=True)
 
 st.caption("Teams sorted by average FDR — easiest fixtures at the top.")

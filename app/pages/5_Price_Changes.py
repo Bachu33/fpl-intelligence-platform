@@ -9,6 +9,9 @@ from utils import load_player_stats, POSITION_ORDER
 
 st.set_page_config(page_title="Price Changes", page_icon="💰", layout="wide")
 
+from utils import apply_custom_css
+apply_custom_css()
+
 st.title("💰 Price Change Tracker")
 st.markdown("Players with high transfer activity are likely to change price soon. Buy before they rise, sell before they fall.")
 st.markdown("---")
@@ -42,7 +45,13 @@ with col1:
         labels={"net_transfers": "Net Transfers In", "player_name": "Player"},
         hover_data=["team", "price", "form"]
     )
-    fig_rise.update_layout(height=500, showlegend=False)
+    fig_rise.update_layout(
+    height=500,
+    showlegend=False,
+    paper_bgcolor="#0d1117",
+    plot_bgcolor="#161b22",
+    font=dict(color="#e6edf3")
+    )
     st.plotly_chart(fig_rise, use_container_width=True)
 
 with col2:
@@ -61,7 +70,13 @@ with col2:
         labels={"net_transfers_abs": "Net Transfers Out", "player_name": "Player"},
         hover_data=["team", "price", "form"]
     )
-    fig_fall.update_layout(height=500, showlegend=False)
+    fig_fall.update_layout(
+    height=500,
+    showlegend=False,
+    paper_bgcolor="#0d1117",
+    plot_bgcolor="#161b22",
+    font=dict(color="#e6edf3")
+    )
     st.plotly_chart(fig_fall, use_container_width=True)
 
 st.markdown("---")
@@ -77,5 +92,10 @@ fig3 = px.scatter(
     hover_data=["team", "price"],
     labels={"net_transfers": "Net Transfers", "form": "Form Score"},
     title="Transfer Activity vs Form (bubble size = price)"
+)
+fig3.update_layout(
+    paper_bgcolor="#0d1117",
+    plot_bgcolor="#161b22",
+    font=dict(color="#e6edf3")
 )
 st.plotly_chart(fig3, use_container_width=True)
