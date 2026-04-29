@@ -4,3 +4,4 @@ pandas
 plotly
 xgboost
 scikit-learn
+python-dotenv
