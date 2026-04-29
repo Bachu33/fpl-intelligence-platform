@@ -113,7 +113,7 @@ def run_predictions(df, model):
 
 def push_predictions(df):
     records = df[["player_id", "player_name", "team", "position", 
-                  "gameweek", "season", "predicted_points"]].to_dict(orient="records")
+              "gameweek", "season", "predicted_points", "now_cost"]].to_dict(orient="records")
     
     print(f"\nPushing {len(records)} predictions to Supabase...")
     

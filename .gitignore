@@ -15,3 +15,5 @@ model/*.joblib
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb
+
+.streamlit/secrets.toml
