@@ -64,33 +64,33 @@ if st.button("🔍 Optimise Squad", type="primary"):
     
     selected = players[[value(x[i]) == 1 for i in range(len(players))]].copy()
 
-if selected.empty:
-    st.error("No valid squad found. Try increasing your budget or relaxing constraints.")
-else:
-    starters_list = []
-    bench_list = []
-    
-    pos_starter_counts = {"GKP": gkp_count, "DEF": def_count, "MID": mid_count, "FWD": fwd_count}
-    
-    for pos in ["GKP", "DEF", "MID", "FWD"]:
-        pos_players = selected[selected["position"] == pos].sort_values("predicted_points", ascending=False)
-        n_starters = pos_starter_counts[pos]
-        starters_list.append(pos_players.head(n_starters))
-        bench_list.append(pos_players.tail(1))
-    
-    starters = pd.concat(starters_list)
-    bench = pd.concat(bench_list)
-    
-    total_cost = selected["price"].sum()
-    total_predicted = starters["predicted_points"].sum()
-    
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Total Squad Cost", f"£{total_cost:.1f}m")
-    col2.metric("Remaining Budget", f"£{budget - total_cost:.1f}m")
-    col3.metric("Starting XI Predicted Points", f"{total_predicted:.1f}")
-    
-    st.markdown("---")
-    st.subheader("Starting XI")
+    if selected.empty:
+        st.error("No valid squad found. Try increasing your budget or relaxing constraints.")
+    else:
+        starters_list = []
+        bench_list = []
+        
+        pos_starter_counts = {"GKP": gkp_count, "DEF": def_count, "MID": mid_count, "FWD": fwd_count}
+        
+        for pos in ["GKP", "DEF", "MID", "FWD"]:
+            pos_players = selected[selected["position"] == pos].sort_values("predicted_points", ascending=False)
+            n_starters = pos_starter_counts[pos]
+            starters_list.append(pos_players.head(n_starters))
+            bench_list.append(pos_players.tail(1))
+        
+        starters = pd.concat(starters_list)
+        bench = pd.concat(bench_list)
+        
+        total_cost = selected["price"].sum()
+        total_predicted = starters["predicted_points"].sum()
+        
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Total Squad Cost", f"£{total_cost:.1f}m")
+        col2.metric("Remaining Budget", f"£{budget - total_cost:.1f}m")
+        col3.metric("Starting XI Predicted Points", f"{total_predicted:.1f}")
+        
+        st.markdown("---")
+        st.subheader("Starting XI")
     
     for pos in ["GKP", "DEF", "MID", "FWD"]:
         pos_players = starters[starters["position"] == pos]
