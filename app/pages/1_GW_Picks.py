@@ -53,24 +53,15 @@ filtered = df[
 
 st.subheader(f"Top {top_n} Players — GW{df['gameweek'].max()}")
 
-col1, col2 = st.columns(2)
+display_cols = ["player_name", "team", "position", "price", "predicted_points"]
+display = filtered[display_cols].copy()
+display.columns = ["Player", "Team", "Position", "Price (£m)", "Predicted Pts"]
+display["Price (£m)"] = display["Price (£m)"].map("{:.1f}".format)
+display["Predicted Pts"] = display["Predicted Pts"].map("{:.2f}".format)
+display = display.reset_index(drop=True)
+display.index += 1
 
-for idx, pos in enumerate(POSITION_ORDER):
-    pos_df = filtered[filtered["position"] == pos]
-    if pos_df.empty:
-        continue
-    
-    display_cols = ["player_name", "team", "price", "predicted_points"]
-    pos_display = pos_df[display_cols].copy()
-    pos_display.columns = ["Player", "Team", "Price (£m)", "Predicted Pts"]
-    pos_display["Price (£m)"] = pos_display["Price (£m)"].map("{:.1f}".format)
-    pos_display["Predicted Pts"] = pos_display["Predicted Pts"].map("{:.2f}".format)
-    pos_display = pos_display.reset_index(drop=True)
-    pos_display.index += 1
-    
-    with (col1 if idx % 2 == 0 else col2):
-        st.markdown(f"#### {pos}")
-        st.dataframe(pos_display, use_container_width=True, hide_index=False)
+st.dataframe(display, use_container_width=True)
 
 st.markdown("---")
 

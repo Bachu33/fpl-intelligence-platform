@@ -35,6 +35,7 @@ if st.button("🔍 Optimise Squad", type="primary"):
     
     def_count, mid_count, fwd_count = [int(x) for x in formation.split("-")]
     gkp_count = 1
+    total_starters = 1 + def_count + mid_count + fwd_count  # always 11
     
     players = df.copy()
     players = players.dropna(subset=["predicted_points", "price"])
@@ -49,10 +50,10 @@ if st.button("🔍 Optimise Squad", type="primary"):
     
     prob += lpSum(players.loc[i, "price"] * x[i] for i in range(len(players))) <= budget
     
-    prob += lpSum(x[i] for i in range(len(players)) if players.loc[i, "position"] == "GKP") == gkp_count
-    prob += lpSum(x[i] for i in range(len(players)) if players.loc[i, "position"] == "DEF") == def_count
-    prob += lpSum(x[i] for i in range(len(players)) if players.loc[i, "position"] == "MID") == mid_count
-    prob += lpSum(x[i] for i in range(len(players)) if players.loc[i, "position"] == "FWD") == fwd_count
+    prob += lpSum(x[i] for i in range(len(players)) if players.loc[i, "position"] == "GKP") == gkp_count + 1
+    prob += lpSum(x[i] for i in range(len(players)) if players.loc[i, "position"] == "DEF") == def_count + 1
+    prob += lpSum(x[i] for i in range(len(players)) if players.loc[i, "position"] == "MID") == mid_count + 1
+    prob += lpSum(x[i] for i in range(len(players)) if players.loc[i, "position"] == "FWD") == fwd_count + 1
     
     teams = players["team"].unique()
     for team in teams:
@@ -61,31 +62,56 @@ if st.button("🔍 Optimise Squad", type="primary"):
     
     prob.solve(PULP_CBC_CMD(msg=0))
     
-    selected = players[[value(x[i]) == 1 for i in range(len(players))]]
+    selected = players[[value(x[i]) == 1 for i in range(len(players))]].copy()
+
+if selected.empty:
+    st.error("No valid squad found. Try increasing your budget or relaxing constraints.")
+else:
+    starters_list = []
+    bench_list = []
     
-    if selected.empty:
-        st.error("No valid squad found. Try increasing your budget or relaxing constraints.")
-    else:
-        total_cost = selected["price"].sum()
-        total_predicted = selected["predicted_points"].sum()
-        
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Total Cost", f"£{total_cost:.1f}m")
-        col2.metric("Remaining Budget", f"£{budget - total_cost:.1f}m")
-        col3.metric("Total Predicted Points", f"{total_predicted:.1f}")
-        
-        st.markdown("---")
-        
-        for pos in ["GKP", "DEF", "MID", "FWD"]:
-            pos_players = selected[selected["position"] == pos]
-            if pos_players.empty:
-                continue
-            
-            st.markdown(f"#### {pos}")
-            display = pos_players[["player_name", "team", "price", "predicted_points"]].copy()
-            display.columns = ["Player", "Team", "Price (£m)", "Predicted Points"]
-            display["Price (£m)"] = display["Price (£m)"].map("{:.1f}".format)
-            display["Predicted Points"] = display["Predicted Points"].map("{:.2f}".format)
-            display = display.reset_index(drop=True)
-            display.index += 1
-            st.dataframe(display, use_container_width=True)
+    pos_starter_counts = {"GKP": gkp_count, "DEF": def_count, "MID": mid_count, "FWD": fwd_count}
+    
+    for pos in ["GKP", "DEF", "MID", "FWD"]:
+        pos_players = selected[selected["position"] == pos].sort_values("predicted_points", ascending=False)
+        n_starters = pos_starter_counts[pos]
+        starters_list.append(pos_players.head(n_starters))
+        bench_list.append(pos_players.tail(1))
+    
+    starters = pd.concat(starters_list)
+    bench = pd.concat(bench_list)
+    
+    total_cost = selected["price"].sum()
+    total_predicted = starters["predicted_points"].sum()
+    
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Total Squad Cost", f"£{total_cost:.1f}m")
+    col2.metric("Remaining Budget", f"£{budget - total_cost:.1f}m")
+    col3.metric("Starting XI Predicted Points", f"{total_predicted:.1f}")
+    
+    st.markdown("---")
+    st.subheader("Starting XI")
+    
+    for pos in ["GKP", "DEF", "MID", "FWD"]:
+        pos_players = starters[starters["position"] == pos]
+        if pos_players.empty:
+            continue
+        st.markdown(f"#### {pos}")
+        display = pos_players[["player_name", "team", "price", "predicted_points"]].copy()
+        display.columns = ["Player", "Team", "Price (£m)", "Predicted Pts"]
+        display["Price (£m)"] = display["Price (£m)"].map("{:.1f}".format)
+        display["Predicted Pts"] = display["Predicted Pts"].map("{:.2f}".format)
+        display = display.reset_index(drop=True)
+        display.index += 1
+        st.dataframe(display, use_container_width=True)
+    
+    st.markdown("---")
+    st.subheader("🪑 Bench")
+    
+    bench_display = bench[["player_name", "team", "position", "price", "predicted_points"]].copy()
+    bench_display.columns = ["Player", "Team", "Position", "Price (£m)", "Predicted Pts"]
+    bench_display["Price (£m)"] = bench_display["Price (£m)"].map("{:.1f}".format)
+    bench_display["Predicted Pts"] = bench_display["Predicted Pts"].map("{:.2f}".format)
+    bench_display = bench_display.reset_index(drop=True)
+    bench_display.index += 1
+    st.dataframe(bench_display, use_container_width=True)
