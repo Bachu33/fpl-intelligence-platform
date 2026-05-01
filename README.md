@@ -172,7 +172,7 @@ SUPABASE_KEY=your_supabase_anon_key
 
 **Hussein Abdikadir**
 BSc Data Science & AI — KCA University, Nairobi
-[GitHub](https://github.com/Bachu33) · [LinkedIn](https://linkedin.com/in/your-linkedin-here)
+[LinkedIn](https://www.linkedin.com/in/abdikadirhusseinbachu))
 
 ---
 
