@@ -37,6 +37,13 @@ if position != "All":
 df = df[df["minutes"] > 0]
 df = df.sort_values("form", ascending=False).head(top_n)
 
+leaders = st.columns(3)
+leaders[0].metric("Form Leader", df.iloc[0]["player_name"], f"{df.iloc[0]['form']:.1f}")
+leaders[1].metric("Best ICT", df.sort_values("ict_index", ascending=False).iloc[0]["player_name"], f"{df['ict_index'].max():.1f}")
+leaders[2].metric("Avg Price", f"£{df['price'].mean():.1f}m")
+
+st.markdown("---")
+
 st.subheader(f"Top {top_n} Players by Form — {position}")
 
 fig = px.bar(

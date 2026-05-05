@@ -1,139 +1,164 @@
-import pandas as pd
-import numpy as np
-import joblib
 import os
-from xgboost import XGBRegressor
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_absolute_error, r2_score
-from sklearn.preprocessing import LabelEncoder
 from datetime import datetime
 
-FEATURE_COLUMNS = [
-    "now_cost",
-    "selected_by_percent",
-    "form",
-    "ict_index",
-    "influence",
-    "creativity",
-    "threat",
-    "minutes",
-    "goals_scored",
-    "assists",
-    "clean_sheets",
-    "goals_conceded",
-    "yellow_cards",
-    "red_cards",
-    "saves",
-    "bonus",
-    "bps",
-    "transfers_in",
-    "transfers_out",
-    "position_encoded",
-    "team_encoded"
+import joblib
+import numpy as np
+import pandas as pd
+from sklearn.metrics import mean_absolute_error, r2_score
+from sklearn.preprocessing import LabelEncoder
+from xgboost import XGBRegressor
+
+TRAINING_PATH = "data/processed/player_gameweek_features.parquet"
+TARGET_COLUMN = "target_points"
+
+CATEGORICAL_COLUMNS = ["position", "team", "opponent_team_id"]
+BASE_FEATURE_COLUMNS = [
+    "fdr",
+    "fixture_count",
+    "was_home",
+    "games_played_before",
 ]
 
-TARGET_COLUMN = "points_per_game"
-
 def load_data():
-    path = "data/processed/players.parquet"
-    
-    if not os.path.exists(path):
-        print("ERROR: players.parquet not found. Run process_data.py first.")
-        exit(1)
-    
-    df = pd.read_parquet(path)
-    print(f"Loaded {len(df)} records from parquet")
-    print(f"Columns: {df.columns.tolist()}")
+    if not os.path.exists(TRAINING_PATH):
+        print(f"ERROR: {TRAINING_PATH} not found. Run etl/build_gw_dataset.py first.")
+        raise SystemExit(1)
+
+    df = pd.read_parquet(TRAINING_PATH)
+    print(f"Loaded {len(df)} player-gameweek rows from {TRAINING_PATH}")
     return df
+
+
+def get_feature_columns(df):
+    lag_columns = [
+        col for col in df.columns
+        if col.endswith("_lag1") or col.endswith("_roll3") or col.endswith("_roll5")
+    ]
+    encoded_columns = [f"{col}_encoded" for col in CATEGORICAL_COLUMNS]
+    return BASE_FEATURE_COLUMNS + lag_columns + encoded_columns
+
 
 def preprocess(df):
     df = df.copy()
-    
-    for col in ["form", "ict_index", "influence", "creativity", 
-                "threat", "selected_by_percent"]:
-        df[col] = pd.to_numeric(df[col], errors="coerce")
-    
-    position_encoder = LabelEncoder()
-    df["position_encoded"] = position_encoder.fit_transform(df["position"])
-    
-    team_encoder = LabelEncoder()
-    df["team_encoded"] = team_encoder.fit_transform(df["team"])
-    
-    df = df.dropna(subset=FEATURE_COLUMNS + [TARGET_COLUMN])
-    
-    df = df[df["minutes"] > 0]
-    
-    print(f"After preprocessing: {len(df)} records remain")
-    print(f"Position encoding: {dict(zip(position_encoder.classes_, position_encoder.transform(position_encoder.classes_)))}")
-    
-    return df, position_encoder, team_encoder
+    encoders = {}
 
-def train_model(df):
-    X = df[FEATURE_COLUMNS]
-    y = df[TARGET_COLUMN]
-    
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
-    
-    print(f"Training set: {len(X_train)} records")
-    print(f"Test set: {len(X_test)} records")
-    
-    model = XGBRegressor(
-        n_estimators=300,
-        learning_rate=0.05,
-        max_depth=5,
-        subsample=0.8,
-        colsample_bytree=0.8,
+    for col in CATEGORICAL_COLUMNS:
+        encoder = LabelEncoder()
+        values = df[col].fillna("Unknown").astype(str)
+        df[f"{col}_encoded"] = encoder.fit_transform(values)
+        encoders[col] = encoder
+
+    feature_columns = get_feature_columns(df)
+
+    for col in feature_columns + [TARGET_COLUMN]:
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    df = df.dropna(subset=feature_columns + [TARGET_COLUMN, "round"])
+    df = df[df["fixture_count"] > 0]
+
+    print(f"After preprocessing: {len(df)} rows remain")
+    print(f"Gameweek range: GW{int(df['round'].min())}-GW{int(df['round'].max())}")
+    print(f"Features: {len(feature_columns)}")
+
+    return df, encoders, feature_columns
+
+
+def make_model():
+    return XGBRegressor(
+        n_estimators=500,
+        learning_rate=0.03,
+        max_depth=4,
+        subsample=0.85,
+        colsample_bytree=0.85,
+        min_child_weight=3,
+        reg_lambda=2.0,
+        objective="reg:squarederror",
         random_state=42,
-        verbosity=0
+        verbosity=0,
     )
-    
-    model.fit(
-        X_train, y_train,
-        eval_set=[(X_test, y_test)],
-        verbose=False
-    )
-    
-    y_pred = model.predict(X_test)
-    mae = mean_absolute_error(y_test, y_pred)
-    r2 = r2_score(y_test, y_pred)
-    
-    print(f"\nModel Performance:")
-    print(f"  MAE:  {mae:.3f} points")
-    print(f"  R²:   {r2:.3f}")
-    
-    feature_importance = pd.DataFrame({
-        "feature": FEATURE_COLUMNS,
-        "importance": model.feature_importances_
-    }).sort_values("importance", ascending=False)
-    
-    print(f"\nTop 5 Features:")
-    print(feature_importance.head(5).to_string(index=False))
-    
+
+
+def rolling_backtest(df, feature_columns, min_train_gw=5):
+    gameweeks = sorted(int(gw) for gw in df["round"].dropna().unique())
+    results = []
+    predictions = []
+
+    for gw in gameweeks:
+        train_df = df[df["round"] < gw]
+        test_df = df[df["round"] == gw]
+
+        if gw < min_train_gw or train_df.empty or test_df.empty:
+            continue
+
+        model = make_model()
+        model.fit(train_df[feature_columns], train_df[TARGET_COLUMN])
+        y_pred = model.predict(test_df[feature_columns])
+
+        mae = mean_absolute_error(test_df[TARGET_COLUMN], y_pred)
+        r2 = r2_score(test_df[TARGET_COLUMN], y_pred) if len(test_df) > 1 else np.nan
+
+        results.append({
+            "gameweek": gw,
+            "rows": len(test_df),
+            "mae": mae,
+            "r2": r2,
+        })
+
+        fold_predictions = test_df[["player_id", "player_name", "round", TARGET_COLUMN]].copy()
+        fold_predictions["predicted_points"] = y_pred
+        predictions.append(fold_predictions)
+
+    if not results:
+        print("WARNING: Not enough history for rolling backtest.")
+        return pd.DataFrame(), pd.DataFrame()
+
+    results_df = pd.DataFrame(results)
+    predictions_df = pd.concat(predictions, ignore_index=True)
+
+    print("\nRolling Backtest:")
+    print(results_df.to_string(index=False, formatters={
+        "mae": "{:.3f}".format,
+        "r2": "{:.3f}".format,
+    }))
+    print(f"\nOverall rolling MAE: {results_df['mae'].mean():.3f} points")
+    print(f"Overall rolling R2:  {results_df['r2'].mean():.3f}")
+
+    return results_df, predictions_df
+
+
+def train_final_model(df, feature_columns):
+    model = make_model()
+    model.fit(df[feature_columns], df[TARGET_COLUMN])
     return model
 
-def save_artifacts(model, position_encoder, team_encoder):
+
+def save_artifacts(model, encoders, feature_columns, backtest):
     os.makedirs("model", exist_ok=True)
-    
+
     joblib.dump(model, "model/xgb_model.joblib")
-    joblib.dump(position_encoder, "model/position_encoder.joblib")
-    joblib.dump(team_encoder, "model/team_encoder.joblib")
-    
+    joblib.dump(encoders, "model/encoders.joblib")
+    joblib.dump(feature_columns, "model/feature_columns.joblib")
+
+    if not backtest.empty:
+        backtest.to_csv("model/backtest_metrics.csv", index=False)
+
     print(f"\n[{datetime.now()}] Saved:")
-    print(f"  model/xgb_model.joblib")
-    print(f"  model/position_encoder.joblib")
-    print(f"  model/team_encoder.joblib")
+    print("  model/xgb_model.joblib")
+    print("  model/encoders.joblib")
+    print("  model/feature_columns.joblib")
+    if not backtest.empty:
+        print("  model/backtest_metrics.csv")
+
 
 if __name__ == "__main__":
     print("=" * 50)
-    print("FPL XGBoost Model Training")
+    print("FPL Gameweek Forecast Model Training")
     print("=" * 50)
-    
-    df = load_data()
-    df, position_encoder, team_encoder = preprocess(df)
-    model = train_model(df)
-    save_artifacts(model, position_encoder, team_encoder)
-    
-    print("\nTraining complete.")
 
+    data = load_data()
+    data, encoders, feature_columns = preprocess(data)
+    backtest, _ = rolling_backtest(data, feature_columns)
+    final_model = train_final_model(data, feature_columns)
+    save_artifacts(final_model, encoders, feature_columns, backtest)
+
+    print("\nTraining complete.")

@@ -38,6 +38,12 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: python etl/process_data.py
 
+      - name: Run build_gw_dataset.py
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: python etl/build_gw_dataset.py
+
       - name: Run update_store.py
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

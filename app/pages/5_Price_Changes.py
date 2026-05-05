@@ -30,6 +30,13 @@ df["transfer_pressure"] = df["net_transfers"] / df["selected_by_percent"].replac
 rising = df.sort_values("net_transfers", ascending=False).head(20)
 falling = df.sort_values("net_transfers", ascending=True).head(20)
 
+metric_cols = st.columns(3)
+metric_cols[0].metric("Biggest Buy", rising.iloc[0]["player_name"], f"{int(rising.iloc[0]['net_transfers']):,}")
+metric_cols[1].metric("Biggest Sell", falling.iloc[0]["player_name"], f"{int(falling.iloc[0]['net_transfers']):,}")
+metric_cols[2].metric("Active Market", f"{len(df):,} players")
+
+st.markdown("---")
+
 col1, col2 = st.columns(2)
 
 with col1:

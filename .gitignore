@@ -1,6 +1,9 @@
 # Virtual environment
 venv/
 
+# Python bytecode
+__pycache__/
+
 # Data files (too large for GitHub)
 data/raw/
 data/processed/
@@ -11,6 +14,7 @@ data/processed/
 # Model files (will be regenerated)
 model/*.pkl
 model/*.joblib
+model/backtest_metrics.csv
 
 # Jupyter
 .ipynb_checkpoints/

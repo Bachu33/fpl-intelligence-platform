@@ -1,17 +1,22 @@
-import streamlit as st
-import pandas as pd
-import plotly.express as px
-import sys
 import os
+import sys
+
+import plotly.express as px
+import streamlit as st
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils import load_predictions, apply_custom_css, POSITION_COLORS, POSITION_ORDER
+from utils import (
+    POSITION_COLORS,
+    POSITION_ORDER,
+    apply_custom_css,
+    load_predictions,
+    render_player_card,
+)
 
 st.set_page_config(page_title="Captain Pick", page_icon="👑", layout="wide")
 apply_custom_css()
 
 st.title("👑 Captain Recommendations")
-st.markdown("Captain the player with the highest predicted points. Your captain scores double — pick right.")
 st.markdown("---")
 
 df = load_predictions()
@@ -23,73 +28,66 @@ if df.empty:
 st.sidebar.header("Filters")
 max_price = st.sidebar.slider("Max Price (£m)", 4.0, 15.0, 15.0, 0.5)
 positions = st.sidebar.multiselect("Position", POSITION_ORDER, default=["MID", "FWD"])
+include_minutes_risk = st.sidebar.checkbox("Include minutes-risk players", value=True)
 
-filtered = df[
-    (df["position"].isin(positions)) &
-    (df["price"] <= max_price)
-].sort_values("predicted_points", ascending=False).head(10)
+filtered = df[(df["position"].isin(positions)) & (df["price"] <= max_price)].copy()
+if not include_minutes_risk and "risk_label" in filtered.columns:
+    filtered = filtered[filtered["risk_label"] != "Minutes risk"]
 
-st.subheader("Top 10 Captain Candidates")
+filtered = filtered.sort_values("predicted_points", ascending=False).head(10)
 
-for i, (_, row) in enumerate(filtered.iterrows()):
-    rank = i + 1
-    doubled = round(row["predicted_points"] * 2, 2)
-    
-    if rank == 1:
-        label = "👑 Captain Pick"
-        border_color = "#FFD700"
-    elif rank == 2:
-        label = "🔰 Vice Captain"
-        border_color = "#C0C0C0"
-    else:
-        label = f"#{rank}"
-        border_color = "#30363d"
-    
-    st.markdown(f"""
-    <div style="
-        background-color: var(--secondary-background-color);
-        border: 1px solid {border_color};
-        border-left: 5px solid {POSITION_COLORS.get(row['position'], '#00cc6a')};
-        border-radius: 8px;
-        padding: 12px 20px;
-        margin-bottom: 8px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    ">
-        <div>
-            <span style="color:{border_color};font-weight:700;margin-right:12px">{label}</span>
-            <span style="font-weight:700;font-size:1.05rem">{row['player_name']}</span>
-            <span style="color:#8b949e;margin-left:8px">{row['team']} · {row['position']} · £{row['price']:.1f}m</span>
-        </div>
-        <div style="text-align:right">
-            <div style="color:#00cc6a;font-weight:700;font-size:1.1rem">{row['predicted_points']:.2f} pts</div>
-            <div style="color:#FFD700;font-size:0.85rem">2x → {doubled} pts</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+st.subheader("Captain Board")
+
+cols = st.columns(2)
+for idx, (_, row) in enumerate(filtered.head(4).iterrows(), start=1):
+    with cols[(idx - 1) % 2]:
+        render_player_card(row, rank=idx, captain=True)
 
 st.markdown("---")
-st.subheader("Predicted Points Comparison")
+
+captain_table = filtered.copy()
+captain_table["captain_points"] = captain_table["predicted_points"] * 2
+
+display_cols = ["player_name", "team", "position", "price", "predicted_points", "captain_points"]
+for optional in ["fixture_label", "opponent", "fdr", "risk_label"]:
+    if optional in captain_table.columns:
+        display_cols.append(optional)
+
+display = captain_table[display_cols].copy()
+display.columns = [
+    "Player",
+    "Team",
+    "Position",
+    "Price (£m)",
+    "Predicted Pts",
+    "Captain Pts",
+    *[col.replace("_", " ").title() for col in display_cols[6:]],
+]
+for col in ["Price (£m)", "Predicted Pts", "Captain Pts"]:
+    display[col] = display[col].map("{:.2f}".format if col != "Price (£m)" else "{:.1f}".format)
+display = display.reset_index(drop=True)
+display.index += 1
+st.dataframe(display, use_container_width=True)
+
+st.markdown("---")
+st.subheader("Captain Points Comparison")
 
 fig = px.bar(
-    filtered.sort_values("predicted_points", ascending=True),
-    x="predicted_points",
+    captain_table.sort_values("captain_points", ascending=True),
+    x="captain_points",
     y="player_name",
     color="position",
     color_discrete_map=POSITION_COLORS,
     orientation="h",
-    labels={"predicted_points": "Predicted Points", "player_name": "Player"},
-    hover_data=["team", "price"]
+    labels={"captain_points": "Captain Points", "player_name": "Player"},
+    hover_data=["team", "price", "predicted_points"],
 )
 
 fig.update_layout(
     height=450,
     paper_bgcolor="#0d1117",
     plot_bgcolor="#161b22",
-    font=dict(color="#e6edf3")
+    font=dict(color="#e6edf3"),
 )
 
 st.plotly_chart(fig, use_container_width=True)
-
-st.caption("Predictions are based on the XGBoost model trained on current season data. Always consider upcoming fixtures before captaining.")

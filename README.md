@@ -72,10 +72,10 @@ FPL API ────────────────────────
 ## Model
 
 - **Algorithm**: XGBoost Regressor
-- **Target**: `points_per_game` (proxy for expected gameweek points)
-- **Features**: Form, ICT index, influence, creativity, threat, minutes, goals, assists, clean sheets, price, transfer activity, position, team
-- **Filtering**: Players with fewer than 45 × current gameweek minutes are excluded to remove rotation risks and cup-only players
-- **Evaluation**: MAE ~1.8 points, R² ~0.4 (realistic for FPL given inherent randomness)
+- **Target**: actual player `total_points` for a future gameweek
+- **Features**: lagged and rolling player form, minutes, starts, ICT, expected goals/assists, bonus/BPS, price, ownership, transfer activity, position, team, fixture count, home/away, opponent, and FDR
+- **Filtering**: training and prediction rows require a scheduled fixture; features are shifted so the model only sees information available before the gameweek being predicted
+- **Evaluation**: rolling gameweek backtests train on previous GWs and test on the next GW; metrics are saved to `model/backtest_metrics.csv` when the pipeline runs
 
 ---
 
@@ -99,10 +99,11 @@ fpl-intelligence-platform/
 │       └── 7_Captain_Pick.py
 ├── etl/
 │   ├── fetch_data.py           # Pulls data from FPL API
-│   ├── process_data.py         # Cleans and engineers features
+│   ├── process_data.py         # Cleans current player stats
+│   ├── build_gw_dataset.py     # Builds historical player-GW training features
 │   └── update_store.py         # Pushes to Supabase
 ├── model/
-│   ├── train.py                # Trains XGBoost model
+│   ├── train.py                # Trains XGBoost model with rolling backtests
 │   └── predict.py              # Generates predictions and pushes to Supabase
 ├── .streamlit/
 │   └── config.toml             # Streamlit theme config
@@ -115,12 +116,13 @@ fpl-intelligence-platform/
 ## How It Works
 
 1. **Every Friday at midnight UTC**, GitHub Actions spins up a Ubuntu VM
-2. It runs `fetch_data.py` — pulls bootstrap, fixture, and live GW data from the FPL API
-3. Then `process_data.py` — cleans data and engineers features, saves as Parquet
-4. Then `update_store.py` — pushes processed player stats to Supabase
-5. Then `train.py` — trains a fresh XGBoost model on current season data
-6. Then `predict.py` — generates predicted points for all eligible players, pushes to Supabase
-7. The Streamlit dashboard reads from Supabase and serves live results to users
+2. It runs `fetch_data.py` — pulls bootstrap, fixture, live GW, and player history data from the FPL API
+3. Then `process_data.py` — cleans current player stats, saves as Parquet
+4. Then `build_gw_dataset.py` — builds one row per player per gameweek with pre-deadline lag/rolling features and actual GW points as the target
+5. Then `update_store.py` — pushes processed player stats to Supabase
+6. Then `train.py` — trains a fresh XGBoost model and evaluates it with rolling gameweek backtests
+7. Then `predict.py` — generates next-gameweek predicted points for all eligible players, pushes to Supabase
+8. The Streamlit dashboard reads from Supabase and serves live results to users
 
 ---
 
@@ -146,6 +148,7 @@ cp .env.example .env
 # Run the ETL pipeline
 python etl/fetch_data.py
 python etl/process_data.py
+python etl/build_gw_dataset.py
 python etl/update_store.py
 python model/train.py
 python model/predict.py
@@ -154,6 +157,16 @@ python model/predict.py
 cd app
 streamlit run app.py
 ```
+
+For local development without Supabase installed or configured, generate predictions without uploading:
+
+```bash
+python model/predict.py --skip-push
+cd app
+streamlit run app.py
+```
+
+The app will read `data/processed/latest_predictions.csv` and `data/processed/players.parquet`.
 
 ---
 
