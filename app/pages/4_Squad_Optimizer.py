@@ -29,6 +29,48 @@ avoid_minutes_risk = st.sidebar.checkbox("Avoid minutes-risk players", value=Fal
 
 
 def render_pitch(starters):
+    pitch_css = """
+    <style>
+    .pitch {
+        background: #2d8a4e;
+        border-radius: 12px;
+        padding: 24px 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        width: 100%;
+    }
+    .pitch-row {
+        display: grid;
+        justify-content: center;
+        gap: 12px;
+        width: 100%;
+    }
+    .pitch-player {
+        background: rgba(0,0,0,0.55);
+        border-radius: 8px;
+        padding: 8px 10px;
+        text-align: center;
+        min-width: 116px;
+        max-width: 148px;
+    }
+    .pitch-name {
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 13px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .pitch-meta {
+        color: #cccccc;
+        font-size: 11px;
+        margin-top: 2px;
+    }
+    </style>
+    """
+
     rows = []
     for pos in POSITION_ORDER:
         pos_players = starters[starters["position"] == pos].sort_values("predicted_points", ascending=False)
@@ -49,6 +91,10 @@ def render_pitch(starters):
             </div>
             """)
 
+    st.markdown(
+        pitch_css + f'<div class="pitch">{"".join(rows)}</div>',
+        unsafe_allow_html=True
+    )
     st.markdown(f'<div class="pitch">{"".join(rows)}</div>', unsafe_allow_html=True)
 
 
