@@ -29,72 +29,42 @@ avoid_minutes_risk = st.sidebar.checkbox("Avoid minutes-risk players", value=Fal
 
 
 def render_pitch(starters):
-    pitch_css = """
-    <style>
-    .pitch {
-        background: #2d8a4e;
-        border-radius: 12px;
-        padding: 24px 16px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 16px;
-        width: 100%;
-    }
-    .pitch-row {
-        display: grid;
-        justify-content: center;
-        gap: 12px;
-        width: 100%;
-    }
-    .pitch-player {
-        background: rgba(0,0,0,0.55);
-        border-radius: 8px;
-        padding: 8px 10px;
-        text-align: center;
-        min-width: 116px;
-        max-width: 148px;
-    }
-    .pitch-name {
-        color: #ffffff;
-        font-weight: 700;
-        font-size: 13px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .pitch-meta {
-        color: #cccccc;
-        font-size: 11px;
-        margin-top: 2px;
-    }
-    </style>
-    """
+    POSITION_COLORS = {"GKP": "#ebff00", "DEF": "#00ff87", "MID": "#05f0ff", "FWD": "#ff4c4c"}
 
     rows = []
     for pos in POSITION_ORDER:
         pos_players = starters[starters["position"] == pos].sort_values("predicted_points", ascending=False)
+        pos_color = POSITION_COLORS.get(pos, "#00ff87")
         cells = []
         for _, player in pos_players.iterrows():
             label = "DGW" if float(player.get("fixture_count", 1) or 1) >= 2 else "SGW"
-            cells.append(f"""
-            <div class="pitch-player">
-                <div class="pitch-name">{player['player_name']}</div>
-                <div class="pitch-meta">{player['team']} · {player['predicted_points']:.1f}</div>
-                <div class="pitch-meta">{label} · £{player['price']:.1f}m</div>
-            </div>
-            """)
+            cells.append(
+                f'<div style="background:rgba(13,17,23,0.85);border:1px solid rgba(255,255,255,0.15);'
+                f'border-top:3px solid {pos_color};border-radius:8px;padding:8px 10px;'
+                f'min-width:116px;max-width:148px;text-align:center;">'
+                f'<div style="color:#ffffff;font-weight:800;font-size:13px;white-space:nowrap;'
+                f'overflow:hidden;text-overflow:ellipsis;">{player["player_name"]}</div>'
+                f'<div style="color:#d8e2eb;font-size:11px;margin-top:3px;">{player["team"]} · {player["predicted_points"]:.1f}pts</div>'
+                f'<div style="color:#d8e2eb;font-size:11px;margin-top:2px;">{label} · £{player["price"]:.1f}m</div>'
+                f'</div>'
+            )
         if cells:
-            rows.append(f"""
-            <div class="pitch-row" style="grid-template-columns: repeat({len(cells)}, minmax(116px, 148px));">
-                {''.join(cells)}
-            </div>
-            """)
+            rows.append(
+                f'<div style="display:flex;justify-content:center;gap:10px;margin:10px 0;">'
+                f'{"".join(cells)}'
+                f'</div>'
+            )
 
-    st.markdown(
-        pitch_css + f'<div class="pitch">{"".join(rows)}</div>',
-        unsafe_allow_html=True
+    pitch_html = (
+        f'<div style="background:linear-gradient(180deg,#146c43 0%,#0f5c39 100%);'
+        f'border:2px solid rgba(255,255,255,0.2);border-radius:12px;'
+        f'padding:20px 16px;margin-top:8px;">'
+        f'{"".join(rows)}'
+        f'</div>'
     )
+
+    st.markdown(pitch_html, unsafe_allow_html=True)
+
 
 if st.button("🔍 Optimise Squad", type="primary"):
     def_count, mid_count, fwd_count = [int(x) for x in formation.split("-")]
