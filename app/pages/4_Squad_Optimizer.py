@@ -95,8 +95,6 @@ def render_pitch(starters):
         pitch_css + f'<div class="pitch">{"".join(rows)}</div>',
         unsafe_allow_html=True
     )
-    st.markdown(f'<div class="pitch">{"".join(rows)}</div>', unsafe_allow_html=True)
-
 
 if st.button("🔍 Optimise Squad", type="primary"):
     def_count, mid_count, fwd_count = [int(x) for x in formation.split("-")]
