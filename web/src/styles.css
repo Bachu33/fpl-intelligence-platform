@@ -367,8 +367,90 @@ input[type="text"] {
   }
 
   .sidebar {
-    position: static;
+    position: sticky;
+    z-index: 20;
     height: auto;
+    top: 0;
+    padding: 12px;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .brand {
+    padding-bottom: 10px;
+  }
+
+  .brand-icon {
+    width: 34px;
+    height: 34px;
+  }
+
+  .brand-title {
+    font-size: 14px;
+  }
+
+  .brand-subtitle {
+    font-size: 11px;
+  }
+
+  .nav-list {
+    display: flex;
+    gap: 8px;
+    margin: 10px 0 0;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .nav-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-item {
+    flex: 0 0 auto;
+    width: auto;
+    padding: 8px 10px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .sidebar-card {
+    display: none;
+  }
+
+  .main-panel {
+    padding: 14px;
+  }
+
+  .page-header {
+    display: block;
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+
+  .page-header p {
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  .badge-row {
+    justify-content: flex-start;
+    margin-top: 14px;
+  }
+
+  .kicker {
+    font-size: 10px;
+    letter-spacing: 0.16em;
+  }
+
+  h1 {
+    font-size: 30px;
+    line-height: 1.08;
+  }
+
+  h2 {
+    margin: 18px 0 10px;
+    font-size: 15px;
   }
 
   .card-grid.two,
@@ -376,5 +458,92 @@ input[type="text"] {
   .card-grid.four,
   .stat-grid {
     grid-template-columns: 1fr;
+  }
+
+  .stat-card,
+  .player-card {
+    padding: 14px;
+  }
+
+  .stat-value {
+    font-size: 22px;
+  }
+
+  .player-card h3 {
+    font-size: 16px;
+  }
+
+  .xpts {
+    font-size: 26px;
+  }
+
+  .toolbar {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  select,
+  input[type="text"],
+  .primary-button {
+    width: 100%;
+  }
+
+  .table-card {
+    border-radius: 10px;
+    max-width: calc(100vw - 28px);
+  }
+
+  table {
+    min-width: 680px;
+  }
+
+  th,
+  td {
+    padding: 10px 11px;
+    font-size: 12px;
+  }
+
+  th {
+    font-size: 10px;
+  }
+
+  .progress-cell {
+    min-width: 112px;
+  }
+
+  .fixture-strip {
+    min-width: 360px;
+  }
+}
+
+@media (min-width: 560px) and (max-width: 980px) {
+  .card-grid.two,
+  .card-grid.three,
+  .card-grid.four,
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .nav-item span {
+    display: none;
+  }
+
+  .nav-item {
+    padding: 9px;
+  }
+
+  .brand {
+    gap: 10px;
+  }
+
+  .main-panel {
+    padding: 10px;
+  }
+
+  .table-card {
+    max-width: calc(100vw - 20px);
   }
 }
