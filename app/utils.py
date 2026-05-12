@@ -206,13 +206,23 @@ def apply_custom_css():
     st.markdown("""
         <style>
         :root {
-            --surface-1: #10151c;
-            --surface-2: #161d26;
-            --border-soft: rgba(230,237,243,0.12);
+            --background: #0b1117;
+            --foreground: #eef4f8;
+            --card: #10151c;
+            --card-foreground: #f4f7fb;
+            --muted: #161d26;
+            --muted-foreground: #9aa6b2;
+            --border: rgba(230,237,243,0.12);
+            --ring: rgba(0,204,106,0.42);
+            --surface-1: var(--card);
+            --surface-2: var(--muted);
+            --border-soft: var(--border);
             --text-soft: #9aa6b2;
             --accent: #00cc6a;
+            --accent-foreground: #ffffff;
             --warn: #f7b955;
             --danger: #ff5c5c;
+            --radius: 8px;
         }
 
         /* Metric boxes */
@@ -249,26 +259,47 @@ def apply_custom_css():
         /* Buttons */
         .stButton > button {
             background-color: var(--accent);
-            color: #ffffff;
+            color: var(--accent-foreground);
             font-weight: 700;
-            border: none;
+            border: 1px solid transparent;
             border-radius: 6px;
-            padding: 0.5rem 1.5rem;
+            min-height: 36px;
+            padding: 0.5rem 1rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.22);
+            transition: background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
         }
 
         .stButton > button:hover {
             background-color: #00aa55;
-            color: #ffffff;
+            color: var(--accent-foreground);
+            box-shadow: 0 0 0 3px var(--ring);
         }
 
+        .stButton > button[kind="secondary"] {
+            background: var(--surface-2);
+            color: var(--foreground);
+            border-color: var(--border);
+        }
+
+        .ui-card,
         .player-card {
             background: var(--surface-1);
             border: 1px solid var(--border-soft);
+            border-radius: var(--radius);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.22);
+        }
+
+        .player-card {
             border-left: 4px solid var(--accent);
-            border-radius: 8px;
             padding: 14px;
             min-height: 156px;
             margin-bottom: 10px;
+            transition: border-color 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+        }
+
+        .player-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.22);
         }
 
         .card-topline {
@@ -279,17 +310,21 @@ def apply_custom_css():
             margin-bottom: 10px;
         }
 
-        .rank-badge, .chip {
+        .ui-badge,
+        .rank-badge,
+        .chip {
             display: inline-flex;
             align-items: center;
-            height: 22px;
-            padding: 0 8px;
-            border-radius: 999px;
+            justify-content: center;
+            min-height: 22px;
+            padding: 0 9px;
+            border-radius: 6px;
             border: 1px solid var(--border-soft);
             color: #e6edf3;
             font-size: 0.75rem;
             font-weight: 700;
             line-height: 1;
+            transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
         }
 
         .rank-badge {
@@ -302,6 +337,15 @@ def apply_custom_css():
             background: rgba(247,185,85,0.14);
             border-color: var(--warn);
             color: #ffd98a;
+        }
+
+        .ui-alert {
+            background: rgba(22,29,38,0.84);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--foreground);
+            padding: 12px 14px;
+            font-size: 0.9rem;
         }
 
         .card-name {
