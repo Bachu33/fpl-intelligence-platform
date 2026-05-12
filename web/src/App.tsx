@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Shell } from "./components/Shell";
 import { DataTable, PageHeader, PlayerCard, StatCard } from "./components/Ui";
 import { buildPlayerViews, fetchPlayerStats, fetchPredictions } from "./lib/data";
+import { fetchFplApi } from "./lib/fplApi";
 import { formatPrice, pickSquad, positions, topByPosition } from "./lib/fpl";
 import { hasSupabaseConfig } from "./lib/supabase";
 import type { PlayerStat, PlayerView, Position, Prediction } from "./types";
@@ -203,19 +204,18 @@ function Fixtures() {
   useEffect(() => {
     async function load() {
       try {
-        const [bootstrapRes, fixturesRes] = await Promise.all([
-          fetch("https://fantasy.premierleague.com/api/bootstrap-static/"),
-          fetch("https://fantasy.premierleague.com/api/fixtures/"),
+        const [bootstrap, fixtures] = await Promise.all([
+          fetchFplApi<{ teams: Array<{ id: number; short_name: string }>; events: Array<{ id: number; is_current: boolean }> }>("bootstrap-static/"),
+          fetchFplApi<Array<{ event: number | null; team_h: number; team_a: number; team_h_difficulty: number; team_a_difficulty: number }>>("fixtures/"),
         ]);
-        const bootstrap = await bootstrapRes.json();
-        const fixtures = await fixturesRes.json();
         const teams = new Map<number, string>(bootstrap.teams.map((team: { id: number; short_name: string }) => [team.id, team.short_name]));
         const current = bootstrap.events.find((event: { is_current: boolean }) => event.is_current)?.id ?? 1;
         const nextRows: FixtureRow[] = [];
 
         fixtures
-          .filter((fixture: { event: number | null }) => fixture.event && fixture.event >= current && fixture.event < current + 6)
-          .forEach((fixture: { event: number; team_h: number; team_a: number; team_h_difficulty: number; team_a_difficulty: number }) => {
+          .filter((fixture) => fixture.event && fixture.event >= current && fixture.event < current + 6)
+          .forEach((fixture) => {
+            if (!fixture.event) return;
             nextRows.push({
               team: teams.get(fixture.team_h) ?? "UNK",
               opponent: teams.get(fixture.team_a) ?? "UNK",
@@ -302,12 +302,9 @@ function MyTeam({ players }: { players: PlayerView[] }) {
     setLoading(true);
     setError(null);
     try {
-      const bootstrapRes = await fetch("https://fantasy.premierleague.com/api/bootstrap-static/");
-      const bootstrap = await bootstrapRes.json();
+      const bootstrap = await fetchFplApi<{ events: Array<{ id: number; is_current: boolean }> }>("bootstrap-static/");
       const current = bootstrap.events.find((event: { is_current: boolean }) => event.is_current)?.id ?? 1;
-      const picksRes = await fetch(`https://fantasy.premierleague.com/api/entry/${teamId}/event/${current}/picks/`);
-      if (!picksRes.ok) throw new Error("Could not load this FPL team. Check the team ID.");
-      const picks = await picksRes.json();
+      const picks = await fetchFplApi<{ picks: Array<{ element: number }> }>(`entry/${teamId}/event/${current}/picks/`);
       const ids = new Set<number>(picks.picks.map((pick: { element: number }) => pick.element));
       setSquad(players.filter((player) => ids.has(player.player_id)));
     } catch (err) {
