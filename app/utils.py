@@ -43,7 +43,7 @@ def _load_local_predictions():
     df["predicted_points"] = pd.to_numeric(df["predicted_points"], errors="coerce")
     df["now_cost"] = pd.to_numeric(df["now_cost"], errors="coerce")
     df["price"] = df["now_cost"] / 10
-    return df
+    return _attach_prediction_context(df)
 
 def _load_local_player_stats():
     if not os.path.exists(PLAYER_STATS_LOCAL_PATH):
@@ -202,6 +202,40 @@ def render_player_card(row, rank=None, captain=False):
     </div>
     """, unsafe_allow_html=True)
 
+def render_sidebar_nav(current_page):
+    with st.sidebar:
+        st.markdown("### ⚽ FPL Intelligence")
+        st.caption("ML predictions · FPL API")
+        st.markdown("---")
+        pages = [
+            ("Dashboard", "app.py", "📊"),
+            ("GW Picks", "pages/1_GW_Picks.py", "🎯"),
+            ("Form vs ICT", "pages/2_Form_Heatmap.py", "🔥"),
+            ("Fixtures", "pages/3_Fixture_Difficulty.py", "📅"),
+            ("Squad Optimizer", "pages/4_Squad_Optimizer.py", "🧮"),
+            ("Prices", "pages/5_Price_Changes.py", "💰"),
+            ("My Team", "pages/6_My_Team.py", "👤"),
+            ("Captain Pick", "pages/7_Captain_Pick.py", "👑"),
+        ]
+        for label, path, icon in pages:
+            st.page_link(path, label=label, icon=icon, disabled=(label == current_page))
+        st.markdown("---")
+        mode = "Local files" if using_local_data() else "Supabase"
+        st.caption(f"Data source: {mode}")
+
+def render_kicker(label):
+    st.markdown(f'<div class="kicker">{label}</div>', unsafe_allow_html=True)
+
+def prediction_column_config(max_points=15):
+    return {
+        "Price (£m)": st.column_config.NumberColumn(format="£%.1f"),
+        "Predicted Pts": st.column_config.ProgressColumn(format="%.2f", min_value=0, max_value=max_points),
+        "Captain Pts": st.column_config.ProgressColumn(format="%.2f", min_value=0, max_value=max_points * 2),
+        "Value Score": st.column_config.NumberColumn(format="%.2f"),
+        "Selected By Percent": st.column_config.NumberColumn(format="%.1f%%"),
+        "Fdr": st.column_config.NumberColumn("FDR", format="%.1f"),
+    }
+
 def render_app_header(title, subtitle, badges=None):
     badges = badges or []
     badges_html = "".join(f'<span class="ui-badge">{badge}</span>' for badge in badges)
@@ -242,6 +276,20 @@ def apply_custom_css():
             --radius: 8px;
         }
 
+        .stApp {
+            background: var(--background);
+        }
+
+        section[data-testid="stSidebar"] {
+            background: var(--surface-1);
+            border-right: 1px solid var(--border);
+        }
+
+        section[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+        section[data-testid="stSidebar"] span {
+            font-family: "SF Mono", Consolas, monospace;
+        }
+
         /* Metric boxes */
         [data-testid="stMetric"] {
             background-color: var(--surface-1);
@@ -255,6 +303,19 @@ def apply_custom_css():
             color: #00cc6a;
             font-size: 1.8rem;
             font-weight: 700;
+            font-family: "SF Mono", Consolas, monospace;
+        }
+
+        [data-testid="stMetricLabel"] {
+            color: var(--muted-foreground);
+            font-family: "SF Mono", Consolas, monospace;
+            font-size: 0.72rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        [data-testid="stMetricDelta"] {
+            color: var(--muted-foreground);
         }
 
         /* Dataframe */
@@ -272,6 +333,20 @@ def apply_custom_css():
 
         h2, h3 {
             font-weight: 600;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: "SF Mono", Consolas, monospace;
+        }
+
+        .kicker {
+            color: var(--accent);
+            font-family: "SF Mono", Consolas, monospace;
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            margin-bottom: 0.45rem;
         }
 
         .app-header {

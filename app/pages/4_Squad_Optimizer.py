@@ -6,10 +6,12 @@ import streamlit as st
 from pulp import LpBinary, LpMaximize, LpProblem, LpVariable, PULP_CBC_CMD, lpSum, value
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils import POSITION_ORDER, apply_custom_css, load_predictions, render_app_header
+from utils import POSITION_ORDER, apply_custom_css, load_predictions, render_app_header, render_kicker, render_sidebar_nav
 
 st.set_page_config(page_title="Squad Optimizer", page_icon="🧠", layout="wide")
 apply_custom_css()
+render_sidebar_nav("Squad Optimizer")
+render_kicker("Optimizer")
 
 st.title("🧠 Squad Optimizer")
 st.markdown("---")

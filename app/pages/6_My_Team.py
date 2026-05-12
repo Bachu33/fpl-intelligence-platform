@@ -5,10 +5,12 @@ import sys
 import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils import load_predictions, apply_custom_css, POSITION_COLORS, POSITION_ORDER
+from utils import load_predictions, apply_custom_css, POSITION_COLORS, POSITION_ORDER, render_kicker, render_sidebar_nav
 
 st.set_page_config(page_title="My Team", page_icon="👤", layout="wide")
 apply_custom_css()
+render_sidebar_nav("My Team")
+render_kicker("My Team")
 
 st.title("👤 My Team")
 st.markdown("Enter your FPL team ID to get personalised recommendations based on your current squad.")

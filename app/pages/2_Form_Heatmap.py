@@ -5,12 +5,14 @@ import sys
 import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils import load_player_stats, POSITION_ORDER
+from utils import load_player_stats, POSITION_ORDER, render_kicker, render_sidebar_nav
 
 st.set_page_config(page_title="Form Heatmap", page_icon="🔥", layout="wide")
 
 from utils import apply_custom_css
 apply_custom_css()
+render_sidebar_nav("Form vs ICT")
+render_kicker("Form Analysis")
 
 st.title("🔥 Form Heatmap")
 st.markdown("Players ranked by current form score (rolling average of recent gameweek points).")

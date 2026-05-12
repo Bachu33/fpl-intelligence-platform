@@ -7,12 +7,14 @@ import sys
 import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils import get_supabase_client
+from utils import get_supabase_client, render_kicker, render_sidebar_nav
 
 st.set_page_config(page_title="Fixture Difficulty", page_icon="📅", layout="wide")
 
 from utils import apply_custom_css
 apply_custom_css()
+render_sidebar_nav("Fixtures")
+render_kicker("Fixtures")
 
 st.title("📅 Fixture Difficulty Rating")
 st.markdown("FDR heatmap showing how hard each team's upcoming fixtures are. Green = easy, Red = hard.")

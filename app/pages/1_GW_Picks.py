@@ -10,15 +10,16 @@ from utils import (
     POSITION_ORDER,
     apply_custom_css,
     load_predictions,
+    prediction_column_config,
     render_app_header,
+    render_kicker,
     render_player_card,
+    render_sidebar_nav,
 )
 
-st.set_page_config(page_title="GW Picks", page_icon="🎯", layout="wide")
+st.set_page_config(page_title="GW Picks — FPL Intelligence", page_icon="🎯", layout="wide")
 apply_custom_css()
-
-st.title("🎯 GW Picks")
-st.markdown("---")
+render_sidebar_nav("GW Picks")
 
 df = load_predictions()
 
@@ -26,25 +27,27 @@ if df.empty:
     st.warning("No predictions available yet. The pipeline may not have run this gameweek.")
     st.stop()
 
+current_gw = int(df["gameweek"].max())
+render_kicker("GW Picks")
 render_app_header(
-    "Pick Explorer",
+    f"Predicted Points · GW {current_gw}",
     "Filter the model board by position, budget, fixture type, and minutes risk.",
-    badges=[f"GW {int(df['gameweek'].max())}", "Cards", "Risk labels"],
+    badges=["Position filters", "Budget", "Fixture tags"],
 )
 
-st.sidebar.header("Filters")
+with st.sidebar:
+    st.markdown("### Filters")
+    pos = st.radio("Position", ["ALL"] + POSITION_ORDER, horizontal=True)
+    max_price = st.slider("Max price (£m)", min_value=4.0, max_value=15.0, value=15.0, step=0.5)
+    top_n = st.slider("Show top", min_value=10, max_value=200, value=50, step=10)
+    hide_minutes_risk = st.checkbox("Hide minutes-risk players", value=False)
+    fixture_mode = st.selectbox("Fixture type", ["All", "Double GW", "Single GW"])
 
-positions = st.sidebar.multiselect("Position", options=POSITION_ORDER, default=POSITION_ORDER)
-max_price = st.sidebar.slider("Max Price (£m)", min_value=4.0, max_value=15.0, value=15.0, step=0.5)
-top_n = st.sidebar.slider("Show Top N Players", min_value=5, max_value=50, value=20, step=5)
-hide_minutes_risk = st.sidebar.checkbox("Hide minutes-risk players", value=False)
-fixture_mode = st.sidebar.selectbox("Fixture Type", ["All", "Double GW", "Single GW"])
-
-filtered = df[(df["position"].isin(positions)) & (df["price"] <= max_price)].copy()
-
+filtered = df[df["price"] <= max_price].copy()
+if pos != "ALL":
+    filtered = filtered[filtered["position"] == pos]
 if hide_minutes_risk and "risk_label" in filtered.columns:
     filtered = filtered[filtered["risk_label"] != "Minutes risk"]
-
 if fixture_mode == "Double GW" and "fixture_count" in filtered.columns:
     filtered = filtered[filtered["fixture_count"] >= 2]
 elif fixture_mode == "Single GW" and "fixture_count" in filtered.columns:
@@ -52,8 +55,7 @@ elif fixture_mode == "Single GW" and "fixture_count" in filtered.columns:
 
 filtered = filtered.sort_values("predicted_points", ascending=False).head(top_n)
 
-st.subheader(f"Top {len(filtered)} Players · GW{int(df['gameweek'].max())}")
-
+st.caption(f"Showing {len(filtered)} players")
 card_cols = st.columns(3)
 for idx, (_, row) in enumerate(filtered.head(6).iterrows(), start=1):
     with card_cols[(idx - 1) % 3]:
@@ -68,23 +70,22 @@ display = filtered[display_cols].copy()
 display.columns = [
     "Player",
     "Team",
-    "Position",
+    "Pos",
     "Price (£m)",
     "Predicted Pts",
     *[col.replace("_", " ").title() for col in display_cols[5:]],
 ]
-display["Price (£m)"] = display["Price (£m)"].map("{:.1f}".format)
-display["Predicted Pts"] = display["Predicted Pts"].map("{:.2f}".format)
-if "Value Score" in display.columns:
-    display["Value Score"] = display["Value Score"].map("{:.2f}".format)
-display = display.reset_index(drop=True)
-display.index += 1
+display.insert(0, "#", range(1, len(display) + 1))
 
-st.dataframe(display, use_container_width=True)
+st.dataframe(
+    display,
+    use_container_width=True,
+    hide_index=True,
+    height=620,
+    column_config=prediction_column_config(),
+)
 
-st.markdown("---")
-st.subheader("Predicted Points Distribution")
-
+st.markdown("### Predicted Points Distribution")
 fig = px.bar(
     filtered.sort_values("predicted_points", ascending=True),
     x="predicted_points",
@@ -94,12 +95,12 @@ fig = px.bar(
     orientation="h",
     labels={"predicted_points": "Predicted Points", "player_name": "Player"},
 )
-
 fig.update_layout(
-    height=max(400, len(filtered) * 25),
-    paper_bgcolor="#0d1117",
-    plot_bgcolor="#161b22",
+    height=max(420, min(900, len(filtered) * 24)),
+    paper_bgcolor="#161b22",
+    plot_bgcolor="#0d1117",
     font=dict(color="#e6edf3"),
 )
-
+fig.update_xaxes(gridcolor="#30363d")
+fig.update_yaxes(gridcolor="#30363d")
 st.plotly_chart(fig, use_container_width=True)
