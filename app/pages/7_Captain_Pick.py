@@ -10,6 +10,7 @@ from utils import (
     POSITION_ORDER,
     apply_custom_css,
     load_predictions,
+    render_app_header,
     render_player_card,
 )
 
@@ -24,6 +25,12 @@ df = load_predictions()
 if df.empty:
     st.warning("No predictions available yet.")
     st.stop()
+
+render_app_header(
+    "Captain Board",
+    "Compare armband candidates with doubled points, fixture tags, and minutes-risk context.",
+    badges=[f"GW {int(df['gameweek'].max())}", "2x scoring", "Risk aware"],
+)
 
 st.sidebar.header("Filters")
 max_price = st.sidebar.slider("Max Price (£m)", 4.0, 15.0, 15.0, 0.5)

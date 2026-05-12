@@ -202,6 +202,23 @@ def render_player_card(row, rank=None, captain=False):
     </div>
     """, unsafe_allow_html=True)
 
+def render_app_header(title, subtitle, badges=None):
+    badges = badges or []
+    badges_html = "".join(f'<span class="ui-badge">{badge}</span>' for badge in badges)
+
+    st.markdown(f"""
+    <div class="app-header">
+        <div>
+            <div class="app-kicker">FPL Intelligence</div>
+            <div class="app-title">{title}</div>
+            <div class="app-subtitle">{subtitle}</div>
+        </div>
+        <div class="app-header-badges">
+            {badges_html}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
 def apply_custom_css():
     st.markdown("""
         <style>
@@ -231,6 +248,7 @@ def apply_custom_css():
             border: 1px solid var(--border-soft);
             border-radius: 8px;
             padding: 16px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.24);
         }
 
         [data-testid="stMetricValue"] {
@@ -254,6 +272,52 @@ def apply_custom_css():
 
         h2, h3 {
             font-weight: 600;
+        }
+
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+            background: linear-gradient(180deg, rgba(16,21,28,0.98), rgba(16,21,28,0.86));
+            border: 1px solid var(--border);
+            border-top: 4px solid var(--accent);
+            border-radius: var(--radius);
+            padding: 22px 24px;
+            margin-bottom: 22px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.22);
+        }
+
+        .app-kicker {
+            color: var(--accent);
+            font-size: 0.78rem;
+            font-weight: 850;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .app-title {
+            color: var(--foreground);
+            font-size: clamp(2rem, 4vw, 3.2rem);
+            font-weight: 900;
+            line-height: 1;
+            margin-bottom: 10px;
+        }
+
+        .app-subtitle {
+            color: var(--muted-foreground);
+            font-size: 1rem;
+            max-width: 720px;
+            line-height: 1.45;
+        }
+
+        .app-header-badges {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 8px;
+            min-width: 220px;
         }
 
         /* Buttons */
@@ -375,6 +439,8 @@ def apply_custom_css():
             border-radius: 8px;
             padding: 14px 16px;
             min-height: 96px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.22);
+            border-top: 3px solid var(--accent);
         }
 
         .insight-label {

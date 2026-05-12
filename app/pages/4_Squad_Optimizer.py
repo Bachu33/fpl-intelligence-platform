@@ -6,7 +6,7 @@ import streamlit as st
 from pulp import LpBinary, LpMaximize, LpProblem, LpVariable, PULP_CBC_CMD, lpSum, value
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils import POSITION_ORDER, apply_custom_css, load_predictions
+from utils import POSITION_ORDER, apply_custom_css, load_predictions, render_app_header
 
 st.set_page_config(page_title="Squad Optimizer", page_icon="🧠", layout="wide")
 apply_custom_css()
@@ -19,6 +19,12 @@ df = load_predictions()
 if df.empty:
     st.warning("No predictions available yet.")
     st.stop()
+
+render_app_header(
+    "Squad Builder",
+    "A pitch-first optimizer for testing formations, budget, team limits, and minutes-risk constraints.",
+    badges=["Linear programming", "Pitch view", "Bench"],
+)
 
 st.sidebar.header("Constraints")
 budget = st.sidebar.slider("Budget (£m)", 75.0, 100.0, 83.0, 0.5)

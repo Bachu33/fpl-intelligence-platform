@@ -10,6 +10,7 @@ from utils import (
     apply_custom_css,
     load_player_stats,
     load_predictions,
+    render_app_header,
     render_player_card,
     using_local_data,
 )
@@ -39,6 +40,12 @@ if df.empty:
 
 current_gw = int(df["gameweek"].max())
 last_updated = df["updated_at"].max() if "updated_at" in df.columns else "Local"
+
+render_app_header(
+    "Gameweek Command Center",
+    "Model-backed captain picks, value signals, fixture context, and squad decisions in one FPL-native dashboard.",
+    badges=[f"GW {current_gw}", "XGBoost", "Rolling backtested", "FPL API"],
+)
 
 if not stats.empty and "selected_by_percent" in stats.columns:
     df = df.merge(

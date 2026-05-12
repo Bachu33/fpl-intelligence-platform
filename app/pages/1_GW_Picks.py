@@ -10,6 +10,7 @@ from utils import (
     POSITION_ORDER,
     apply_custom_css,
     load_predictions,
+    render_app_header,
     render_player_card,
 )
 
@@ -24,6 +25,12 @@ df = load_predictions()
 if df.empty:
     st.warning("No predictions available yet. The pipeline may not have run this gameweek.")
     st.stop()
+
+render_app_header(
+    "Pick Explorer",
+    "Filter the model board by position, budget, fixture type, and minutes risk.",
+    badges=[f"GW {int(df['gameweek'].max())}", "Cards", "Risk labels"],
+)
 
 st.sidebar.header("Filters")
 
