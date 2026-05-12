@@ -142,12 +142,13 @@ select {
 
 h1 {
   margin: 0;
-  font-size: clamp(32px, 5vw, 58px);
-  letter-spacing: -0.06em;
+  font-size: 42px;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
 }
 
 h2 {
-  margin: 28px 0 14px;
+  margin: 24px 0 12px;
   font-size: 18px;
 }
 
@@ -238,14 +239,14 @@ h2 {
 }
 
 .player-card h3 {
-  margin: 16px 0 4px;
+  margin: 14px 0 4px;
   font-size: 18px;
 }
 
 .xpts {
   margin-top: 14px;
   color: var(--primary);
-  font-size: 34px;
+  font-size: 32px;
   font-weight: 900;
 }
 

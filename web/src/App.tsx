@@ -315,6 +315,41 @@ function MyTeam({ players }: { players: PlayerView[] }) {
   }
 
   const weakLinks = [...squad].sort((a, b) => a.predicted_points - b.predicted_points).slice(0, 3);
+  const squadIds = new Set(squad.map((player) => player.player_id));
+  const teamCounts = squad.reduce((counts, player) => {
+    counts.set(player.team, (counts.get(player.team) ?? 0) + 1);
+    return counts;
+  }, new Map<string, number>());
+
+  function findUpgrade(player: PlayerView) {
+    const candidates = players
+      .filter((candidate) =>
+        candidate.position === player.position &&
+        !squadIds.has(candidate.player_id) &&
+        candidate.price <= player.price + 1.5 &&
+        candidate.predicted_points > player.predicted_points
+      )
+      .sort((a, b) => b.predicted_points - a.predicted_points);
+
+    for (const candidate of candidates) {
+      const teamCount = teamCounts.get(candidate.team) ?? 0;
+      const replacingSameTeam = candidate.team === player.team;
+
+      if (teamCount < 3 || replacingSameTeam) {
+        return { candidate, slotPlayer: null };
+      }
+
+      const slotPlayer = squad
+        .filter((teammate) => teammate.team === candidate.team)
+        .sort((a, b) => a.predicted_points - b.predicted_points)[0];
+
+      if (slotPlayer) {
+        return { candidate, slotPlayer };
+      }
+    }
+
+    return null;
+  }
 
   return (
     <>
@@ -330,18 +365,19 @@ function MyTeam({ players }: { players: PlayerView[] }) {
           <h2>Suggested upgrade search</h2>
           <section className="card-grid three">
             {weakLinks.map((player) => {
-              const replacement = players.find((candidate) =>
-                candidate.position === player.position &&
-                candidate.player_id !== player.player_id &&
-                candidate.price <= player.price + 1.5 &&
-                candidate.predicted_points > player.predicted_points
-              );
+              const upgrade = findUpgrade(player);
               return (
                 <div className="stat-card" key={player.player_id}>
                   <div className="stat-label">Consider replacing</div>
                   <div className="stat-value">{player.player_name}</div>
                   <div className="stat-sub">
-                    {replacement ? `Target ${replacement.player_name} (+${(replacement.predicted_points - player.predicted_points).toFixed(2)} xPts)` : "No clear upgrade in range"}
+                    {upgrade ? (
+                      upgrade.slotPlayer ? (
+                        `Target ${upgrade.candidate.player_name} (+${(upgrade.candidate.predicted_points - player.predicted_points).toFixed(2)} xPts), but free a ${upgrade.candidate.team} slot by moving ${upgrade.slotPlayer.player_name}`
+                      ) : (
+                        `Target ${upgrade.candidate.player_name} (+${(upgrade.candidate.predicted_points - player.predicted_points).toFixed(2)} xPts)`
+                      )
+                    ) : "No clear upgrade in range"}
                   </div>
                 </div>
               );
