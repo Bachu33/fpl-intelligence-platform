@@ -10,6 +10,12 @@ data/processed/
 
 # Environment variables
 .env
+web/.env
+web/.env.local
+
+# React frontend
+web/node_modules/
+web/dist/
 
 # Model files (will be regenerated)
 model/*.pkl
