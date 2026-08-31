@@ -2,6 +2,12 @@ import pandas as pd
 import json
 import os
 from datetime import datetime
+from dotenv import load_dotenv
+
+load_dotenv()
+
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
 
 def load_raw_data():
     with open("data/raw/bootstrap.json", "r") as f:
@@ -73,10 +79,36 @@ def process_players(elements, teams, current_gw):
     
     return df
 
+def push_to_supabase(df):
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        print("WARNING: SUPABASE_URL or SUPABASE_KEY not found. Skipping Supabase push.")
+        return
+
+    try:
+        from supabase import create_client
+    except ModuleNotFoundError:
+        print("WARNING: 'supabase' package not installed. Skipping Supabase push.")
+        return
+
+    supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    print("Supabase client connected.")
+
+    records = df.to_dict(orient="records")
+    print(f"Pushing {len(records)} records to Supabase...")
+
+    batch_size = 100
+    for i in range(0, len(records), batch_size):
+        batch = records[i:i + batch_size]
+        supabase.table("player_gameweek_stats").upsert(batch).execute()
+        print(f"  Uploaded records {i + 1} to {min(i + batch_size, len(records))}")
+
+    print(f"[{datetime.now()}] All records pushed successfully.")
+
 if __name__ == "__main__":
     print("Starting data processing...")
     elements, teams, events = load_raw_data()
     current_gw = get_current_gw(events)
     print(f"Processing for GW{current_gw}")
     df = process_players(elements, teams, current_gw)
+    push_to_supabase(df)
     print("Processing complete.")
